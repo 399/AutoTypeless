@@ -1,0 +1,67 @@
+name: Release DMG
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version without the v prefix"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $VERSION" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build release executable
+        run: swift build -c release --product AutoTypelessMenuBar
+
+      - name: Run core tests
+        run: swift test
+
+      - name: Package DMG
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: zsh scripts/package-dmg.sh
+
+      - name: Generate checksum
+        shell: bash
+        run: |
+          cd dist
+          shasum -a 256 "AutoTypeless-${{ steps.version.outputs.version }}.dmg" > "AutoTypeless-${{ steps.version.outputs.version }}.dmg.sha256"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          gh release create "$TAG" \
+            "dist/AutoTypeless-${{ steps.version.outputs.version }}.dmg" \
+            "dist/AutoTypeless-${{ steps.version.outputs.version }}.dmg.sha256" \
+            --target "$GITHUB_SHA" \
+            --title "AutoTypeless ${{ steps.version.outputs.version }}" \
+            --generate-notes
