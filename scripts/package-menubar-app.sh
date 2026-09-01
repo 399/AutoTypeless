@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="${0:A:h}"
 PROJECT_DIR="${SCRIPT_DIR:h}"
+APP_VERSION="${APP_VERSION:-0.8.5}"
+BUILD_NUMBER="${BUILD_NUMBER:-23}"
 APP_DIR="$PROJECT_DIR/dist/AutoTypeless.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -11,10 +13,12 @@ EXECUTABLE="$PROJECT_DIR/.build/release/AutoTypelessMenuBar"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$EXECUTABLE" "$MACOS_DIR/AutoTypeless"
-cp "$PROJECT_DIR/Assets/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+if [[ -f "$PROJECT_DIR/Assets/AppIcon.icns" ]]; then
+    cp "$PROJECT_DIR/Assets/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+fi
 chmod 755 "$MACOS_DIR/AutoTypeless"
 
-cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
+cat > "$CONTENTS_DIR/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -34,9 +38,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.8.5</string>
+    <string>${APP_VERSION}</string>
     <key>CFBundleVersion</key>
-    <string>23</string>
+    <string>${BUILD_NUMBER}</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>LSMinimumSystemVersion</key>

@@ -3,13 +3,15 @@ set -euo pipefail
 
 SCRIPT_DIR="${0:A:h}"
 PROJECT_DIR="${SCRIPT_DIR:h}"
+APP_VERSION="${APP_VERSION:-0.8.5}"
+BUILD_NUMBER="${BUILD_NUMBER:-23}"
 DIST_DIR="$PROJECT_DIR/dist"
 APP_PATH="$DIST_DIR/AutoTypeless.app"
 STAGING_DIR="$DIST_DIR/dmg-staging"
-DMG_PATH="$DIST_DIR/AutoTypeless-0.8.5.dmg"
-VOLUME_NAME="AutoTypeless 0.8.5"
+DMG_PATH="$DIST_DIR/AutoTypeless-${APP_VERSION}.dmg"
+VOLUME_NAME="AutoTypeless ${APP_VERSION}"
 
-zsh "$PROJECT_DIR/scripts/package-menubar-app.sh" >/dev/null
+APP_VERSION="$APP_VERSION" BUILD_NUMBER="$BUILD_NUMBER" zsh "$PROJECT_DIR/scripts/package-menubar-app.sh" >/dev/null
 
 rm -rf "$STAGING_DIR"
 rm -f "$DMG_PATH"
