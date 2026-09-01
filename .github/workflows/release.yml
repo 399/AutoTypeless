@@ -36,32 +36,57 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Build release executable
-        run: swift build -c release --product AutoTypelessMenuBar
-
       - name: Run core tests
         run: swift test
 
-      - name: Package DMG
+      - name: Build Apple Silicon executable
+        run: swift build -c release --product AutoTypelessMenuBar --arch arm64
+
+      - name: Package Apple Silicon DMG
         env:
           APP_VERSION: ${{ steps.version.outputs.version }}
           BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_ARCH: arm64
+          ASSET_SUFFIX: -Apple-Silicon
         run: zsh scripts/package-dmg.sh
 
-      - name: Generate checksum
+      - name: Build Intel executable
+        run: swift build -c release --product AutoTypelessMenuBar --arch x86_64
+
+      - name: Package Intel DMG
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_ARCH: x86_64
+          ASSET_SUFFIX: -Intel
+        run: zsh scripts/package-dmg.sh
+
+      - name: Generate checksums
         shell: bash
         run: |
           cd dist
-          shasum -a 256 "AutoTypeless-${{ steps.version.outputs.version }}.dmg" > "AutoTypeless-${{ steps.version.outputs.version }}.dmg.sha256"
+          shasum -a 256 "AutoTypeless-${{ steps.version.outputs.version }}-Apple-Silicon.dmg" > "AutoTypeless-${{ steps.version.outputs.version }}-Apple-Silicon.dmg.sha256"
+          shasum -a 256 "AutoTypeless-${{ steps.version.outputs.version }}-Intel.dmg" > "AutoTypeless-${{ steps.version.outputs.version }}-Intel.dmg.sha256"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${{ steps.version.outputs.version }}"
-          gh release create "$TAG" \
-            "dist/AutoTypeless-${{ steps.version.outputs.version }}.dmg" \
-            "dist/AutoTypeless-${{ steps.version.outputs.version }}.dmg.sha256" \
-            --target "$GITHUB_SHA" \
-            --title "AutoTypeless ${{ steps.version.outputs.version }}" \
-            --generate-notes
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              "dist/AutoTypeless-${{ steps.version.outputs.version }}-Apple-Silicon.dmg" \
+              "dist/AutoTypeless-${{ steps.version.outputs.version }}-Apple-Silicon.dmg.sha256" \
+              "dist/AutoTypeless-${{ steps.version.outputs.version }}-Intel.dmg" \
+              "dist/AutoTypeless-${{ steps.version.outputs.version }}-Intel.dmg.sha256" \
+              --clobber
+          else
+            gh release create "$TAG" \
+              "dist/AutoTypeless-${{ steps.version.outputs.version }}-Apple-Silicon.dmg" \
+              "dist/AutoTypeless-${{ steps.version.outputs.version }}-Apple-Silicon.dmg.sha256" \
+              "dist/AutoTypeless-${{ steps.version.outputs.version }}-Intel.dmg" \
+              "dist/AutoTypeless-${{ steps.version.outputs.version }}-Intel.dmg.sha256" \
+              --target "$GITHUB_SHA" \
+              --title "AutoTypeless ${{ steps.version.outputs.version }}" \
+              --generate-notes
+          fi
