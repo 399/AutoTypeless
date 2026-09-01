@@ -1,0 +1,42 @@
+.build/
+dist/
+.DS_Store
+.usage-test/
+.workbuddy-backups/
+
+# Local runtime and account data
+user-data.json
+app-storage.json
+typeless.db
+Local Storage/
+Session Storage/
+Partitions/
+sentry/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+
+# IDE and temporary files
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Local research extracts (not part of the product source)
+api-snippets.txt
+balance-snippets.txt
+main-snippets.txt
+renderer-snippets.txt
+usage-schema-snippets.txt
